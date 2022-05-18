@@ -16,7 +16,6 @@ app.use(express.static('public'))
 
 // routes setting
 app.get('/', (req, res) => {
-  // past the restaurant data into 'index' partial template
   res.render('index', {
     restaurants: restaurantList.results
   })
