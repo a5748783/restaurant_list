@@ -42,6 +42,16 @@ app.get('/restaurants/new', (req, res) => {
   return res.render('new')
 })
 
+
+// 瀏覽特定餐廳
+app.get('/restaurants/:restaurantId', (req, res) => {
+  const { restaurantId } = req.params
+  Restaurant.findById(restaurantId)
+  .lean()
+  .then(restaurants => res.render('show', { restaurants }))
+  .catch(err => console.log(err))
+})
+
 // 新增餐廳
 app.post("/restaurants", (req, res) => {
   Restaurant.create(req.body)
