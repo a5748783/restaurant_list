@@ -2,22 +2,14 @@
 const express = require('express')
 const app = express()
 const port = 3000
+
 const exphbs = require('express-handlebars')
-const Restaurant = require('./models/restaurant')
-const mongoose = require('mongoose') // 載入 mongoose
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-
-
-// 取得資料庫連線狀態
+const mongoose = require('mongoose')
 const db = mongoose.connection
-// 連線異常
-db.on('error', () => {
-  console.log('mongodb error!')
-})
-// 連線成功
-db.once('open', () => {
-  console.log('mongodb connected!')
-})
+
+const Restaurant = require('./models/Restaurant')
+const bodyParser = require('body-parser')
+const urlencoded = require('body-parser/lib/types/urlencoded')
 
 // setting template engine
 app.engine('handlebars', exphbs({
@@ -28,53 +20,109 @@ app.set('view engine', 'handlebars')
 // setting static files
 app.use(express.static('public'))
 
+app.use(bodyParser.urlencoded({ extended: true }))
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+
+db.on('error', () => {
+  console.log('mongodb error!')
+})
+// 連線成功
+db.once('open', () => {
+  console.log('mongodb connected!')
+})
 // routes setting
-// 瀏覽餐廳
 app.get('/', (req, res) => {
-  Restaurant.find() // 取出 Restaurant model 裡的所有資料
-  .lean() // 把 Mongoose 的 Model 物件轉換成乾淨的 JavaScript 資料陣列
-  .then(restaurants => res.render('index', { restaurants })) // 將資料傳給 index 樣板
-  .catch(error => console.error(error))// 錯誤處理
+  Restaurant.find({})
+    .lean()
+    .then(restaurants => res.render('index', { restaurants }))
+    .then(console.log('index rendered!'))
+    .catch(error => console.log(error))
 })
 
-// 新增餐廳頁面
+// add create restaurant
 app.get('/restaurants/new', (req, res) => {
-  return res.render('new')
+  res.render('new')
 })
 
-
-// 瀏覽特定餐廳
-app.get('/restaurants/:restaurantId', (req, res) => {
-  const { restaurantId } = req.params
-  Restaurant.findById(restaurantId)
-  .lean()
-  .then(restaurants => res.render('show', { restaurants }))
-  .catch(err => console.log(err))
-})
-
-// 新增餐廳
-app.post("/restaurants", (req, res) => {
-  Restaurant.create(req.body)
-    .then(() => res.redirect("/"))
+app.post('/restaurants', (req, res) => {
+  const body = req.body
+  return Restaurant.create(body)
+    .then(console.log('new restaurant added,req.body', body))
+    .then(() => res.redirect('/'))
     .catch(err => console.log(err))
 })
 
-app.get('/restaurants/:restaurant_id', (req, res) => {
-  const restaurant = restaurantList.results.find(restaurant => restaurant.id.toString() === req.params.restaurant_id)
-  res.render('show', {
-    restaurant: restaurant
-  })
+// 瀏覽餐廳
+app.get('/restaurants/:id', (req, res) => {
+  const id = req.params.id
+  return Restaurant.findById(id)
+    .lean()
+    .then(restaurant => res.render('show', { restaurant }))
+    .then(console.log('show restaurant detail!'))
+    .catch(err => console.log(err))
 })
 
-app.get('/search', (req, res) => {
-  const keyword = req.query.keyword
-  const restaurants = restaurantList.results.filter(restaurant => {
-    return restaurant.name.toLowerCase().includes(keyword.toLowerCase()) || restaurant.category.includes(keyword)
-  })
-  res.render('index', {
-    restaurants: restaurants,
-    keyword: keyword
-  })
+
+// 編輯餐廳
+app.get('/restaurants/:id/edit', (req, res) => {
+  const id = req.params.id
+  return Restaurant.findById(id)
+    .lean()
+    .then((restaurant) => res.render('edit', { restaurant }))
+    .catch(error => console.log(error))
+})
+
+
+app.post('/restaurants/:id/edit', (req, res) => {
+  const id = req.params.id
+  const body = req.body
+  // console.log('body', body)
+  return Restaurant.findById(id)
+    .then((restaurant) => {
+      restaurant.name = body.name
+      restaurant.name_en = body.name_en
+      restaurant.category = body.category
+      restaurant.image = body.image
+      restaurant.location = body.location
+      restaurant.phone = body.phone
+      restaurant.google_map = body.google_map
+      restaurant.rating = body.rating
+      restaurant.description = body.description
+      return restaurant.save()
+    })
+    .then(() => res.redirect(`/restaurants/${id}`))
+    .catch(error => console.log(error))
+})
+
+// 刪除餐廳
+app.post('/restaurants/:id/delete', (req, res) => {
+  const id = req.params.id
+  return Restaurant.findById(id)
+    .then(restaurant => restaurant.remove())
+    .then(() => res.redirect('/'))
+    .catch(error => console.log(error))
+})
+
+// 搜尋餐廳
+app.get("/search", (req, res) => {
+  if (!req.query.keywords) {
+    res.redirect("/")
+  }
+
+  const keywords = req.query.keywords
+  const keyword = req.query.keywords.trim().toLowerCase()
+
+  Restaurant.find({})
+    .lean()
+    .then(restaurants => {
+      const filterRestaurants = restaurants.filter(
+        data =>
+          data.name.toLowerCase().includes(keyword) ||
+          data.category.includes(keyword)
+      )
+      res.render("index", { restaurants: filterRestaurants, keywords })
+    })
+    .catch(err => console.log(err))
 })
 // start and listen on the Express server
 app.listen(port, () => {
