@@ -66,4 +66,6 @@ Font-awesome 5.8.1
 MongoDB
 
 mongoose 6.3.3
+
+method-override@3.0.0
 ```
