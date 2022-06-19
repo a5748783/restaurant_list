@@ -6,7 +6,7 @@
 也可以新增、刪除或是編輯餐廳資訊。
 
 ### 功能
-
+- 使用email或facebook註冊帳號
 - 查看所有餐廳
 - 瀏覽餐廳的詳細資訊
 - 連結餐廳的地址到 Google 地圖
@@ -23,11 +23,14 @@
    ```bash
    npm install
    ```
-4. MongoDB路由設定
+   
+4. 將 .env.example 檔名更改為 .env，並修改相關變數
+```
+MONGODB_URI = mongodb+srv://<account>:<password>@cluster0.9lnbo.mongodb.net/<database name>?retryWrites=true&w=majority
+FACEBOOK_ID = facebook 應用程式編號
+FACEBOOK_SECRET = facebook 應用程式密鑰
+```
 
-   ```bash
-   export MONGODB_URI="<根據自己的MONGODB_URI及帳號密碼做設定>"
-   ```
 5. 種子資料初始化
    ```bash
    npm run seed
@@ -57,7 +60,15 @@ Node.js 14.16.0
 
 Express 4.16.4
 
+Express-session 1.17.1
+
 Express-Handlebars 3.0.0
+
+Dotenv 16.0.1
+
+Bcryptjs2.4.3
+
+Connect-flash 0.1.1
 
 Bootstrap 4.3.1
 
@@ -68,4 +79,10 @@ MongoDB
 mongoose 6.3.3
 
 method-override@3.0.0
+
+Passport 0.4.1
+
+Passport-local 1.0.0
+
+Ppassport-facebook 3.0.0
 ```
